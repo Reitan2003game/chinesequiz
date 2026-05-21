@@ -27,7 +27,6 @@
         .pool-info { font-size: 13px; color: #7f8c8d; margin-bottom: 20px; }
         .info { font-size: 18px; color: #34495e; margin-bottom: 15px; font-weight: bold; }
         
-        /* 倒计时样式 */
         .timer-box {
             font-size: 22px;
             color: #e74c3c;
@@ -68,7 +67,6 @@
         }
         .input-box:focus { border-color: #e67e22; }
         
-        /* 按钮样式 */
         .btn {
             background-color: #e67e22;
             color: white;
@@ -84,7 +82,6 @@
         }
         .btn:hover { background-color: #d35400; }
         
-        /* 开始与失败的遮罩层 */
         .overlay {
             position: absolute;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -126,23 +123,20 @@
 <body>
 
 <div class="game-container" id="gameBox">
-    <!-- 🎮 游戏开始前的封面（看不到题目） -->
     <div class="overlay start-bg" id="startScreen">
         <h2>🧩 华语猜谜终极挑战</h2>
         <p style="color: #bdc3c7; margin-bottom: 30px;">系统随机抽取 5 题 · 每题仅有 15 秒时间回答</p>
         <button class="btn btn-start" onclick="startGame()">START</button>
     </div>
 
-    <!-- 💀 任务失败的遮罩层（默认隐藏） -->
     <div class="overlay fail-bg" id="failScreen" style="display: none;">
         <h1 style="color: white; font-size: 40px; margin-bottom: 10px;">❌ 任务失败</h1>
         <p id="failReason" style="color: #f9ebea; margin-bottom: 30px; font-size: 16px;">15秒时间已到！</p>
         <button class="btn btn-reset" onclick="resetGame()">RESET</button>
     </div>
 
-    <!-- 📥 游戏主体内容 -->
     <h1>🧩 经典华语猜谜游戏</h1>
-    <div class="pool-info">📊 题库总计: 300 题 | 每次随机抽取 5 题</div>
+    <div class="pool-info">📊 题库总计: 60 题 | 每次随机抽取 5 题</div>
     
     <div id="gameContent">
         <div class="timer-box">⏳ 剩余时间: <span id="timer">15</span> 秒</div>
