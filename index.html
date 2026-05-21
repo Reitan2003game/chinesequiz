@@ -136,7 +136,7 @@
     </div>
 
     <h1>🧩 经典华语猜谜游戏</h1>
-    <div class="pool-info">📊 题库总计: <span id="totalPoolCount">计算中...</span> 题 | 每次随机抽取 5 题</div>
+    <div class="pool-info">📊 题库总计: 60 题 | 每次随机抽取 5 题</div>
     
     <div id="gameContent">
         <div class="timer-box">⏳ 剩余时间: <span id="timer">15</span> 秒</div>
@@ -353,8 +353,7 @@
     let timerInterval = null; 
 
     function startGame() {
-        // 自动计算并在网页上更新总题数
-document.getElementById("totalPoolCount").innerText = characterPool.length + itemPool.length + idiomPool.length;
+        document.getElementById("startScreen").style.display = "none";
         document.getElementById("failScreen").style.display = "none";
         
         const totalPool = [...characterPool, ...itemPool, ...idiomPool];
