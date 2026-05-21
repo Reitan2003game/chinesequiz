@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>华语猜谜游戏 - 15秒生死挑战版</title>
+    <style>
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .game-container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+            text-align: center;
+            width: 440px;
+            position: relative;
+            min-height: 380px;
+        }
+        h1 { color: #2c3e50; margin-bottom: 5px; font-size: 24px; }
+        .pool-info { font-size: 13px; color: #7f8c8d; margin-bottom: 20px; }
+        .info { font-size: 18px; color: #34495e; margin-bottom: 15px; font-weight: bold; }
+        
+        /* 倒计时样式 */
+        .timer-box {
+            font-size: 22px;
+            color: #e74c3c;
+            font-weight: bold;
+            margin-bottom: 10px;
+            background: #fadbd8;
+            padding: 5px 10px;
+            border-radius: 8px;
+            display: inline-block;
+        }
+        
+        .type-badge {
+            background-color: #9b59b6;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        .hints-box {
+            background-color: #fdfefe;
+            border: 1px solid #e1e8ed;
+            border-left: 5px solid #e67e22;
+            padding: 15px;
+            margin: 20px 0;
+            text-align: left;
+            border-radius: 6px;
+        }
+        .hint { margin: 10px 0; font-size: 15px; color: #2c3e50; line-height: 1.5; }
+        .input-box {
+            width: 85%;
+            padding: 12px;
+            font-size: 18px;
+            border: 2px solid #bdc3c7;
+            border-radius: 8px;
+            outline: none;
+            text-align: center;
+            transition: 0.3s;
+        }
+        .input-box:focus { border-color: #e67e22; }
+        
+        /* 按钮样式 */
+        .btn {
+            background-color: #e67e22;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 15px;
+            width: 92%;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+        .btn:hover { background-color: #d35400; }
+        
+        /* 开始与失败的遮罩层 */
+        .overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            z-index: 10;
+        }
+        .start-bg { background-color: #2c3e50; }
+        .fail-bg { background-color: #c0392b; }
+        
+        .btn-start {
+            background-color: #2ecc71;
+            font-size: 28px;
+            padding: 15px 50px;
+            width: auto;
+            box-shadow: 0 4px 15px rgba(46,204,113,0.4);
+        }
+        .btn-start:hover { background-color: #27ae60; }
+        
+        .btn-reset {
+            background-color: #f1c40f;
+            color: #2c3e50;
+            font-size: 24px;
+            padding: 12px 40px;
+            width: auto;
+            box-shadow: 0 4px 15px rgba(241,196,15,0.4);
+        }
+        .btn-reset:hover { background-color: #f39c12; }
+        
+        .message { margin-top: 15px; font-weight: bold; font-size: 15px; min-height: 20px; }
+        .success { color: #27ae60; }
+        .error { color: #c0392b; }
+    </style>
+</head>
+<body>
+
+<div class="game-container" id="gameBox">
+    <!-- 🎮 游戏开始前的封面（看不到题目） -->
+    <div class="overlay start-bg" id="startScreen">
+        <h2>🧩 华语猜谜终极挑战</h2>
+        <p style="color: #bdc3c7; margin-bottom: 30px;">系统随机抽取 5 题 · 每题仅有 15 秒时间回答</p>
+        <button class="btn btn-start" onclick="startGame()">START</button>
+    </div>
+
+    <!-- 💀 任务失败的遮罩层（默认隐藏） -->
+    <div class="overlay fail-bg" id="failScreen" style="display: none;">
+        <h1 style="color: white; font-size: 40px; margin-bottom: 10px;">❌ 任务失败</h1>
+        <p id="failReason" style="color: #f9ebea; margin-bottom: 30px; font-size: 16px;">15秒时间已到！</p>
+        <button class="btn btn-reset" onclick="resetGame()">RESET</button>
+    </div>
+
+    <!-- 📥 游戏主体内容 -->
+    <h1>🧩 经典华语猜谜游戏</h1>
+    <div class="pool-info">📊 题库总计: 300 题 | 每次随机抽取 5 题</div>
+    
+    <div id="gameContent">
+        <div class="timer-box">⏳ 剩余时间: <span id="timer">15</span> 秒</div>
+        <div class="info">挑战进度：第 <span id="currentLevel">1</span> / <span id="totalLevels">5</span> 关</div>
+        <div>题目类型：<span class="type-badge" id="questionType">-</span></div>
+        
+        <div class="hints-box">
+            <div class="hint">💡 提示 1：<span id="hint1">-</span></div>
+            <div class="hint">💡 提示 2：<span id="hint2">-</span></div>
+            <div class="hint">💡 提示 3：<span id="hint3">-</span></div>
+        </div>
+
+        <input type="text" class="input-box" id="answerInput" placeholder="请输入你的答案..." autocomplete="off">
+        <br>
+        <button class="btn" onclick="checkAnswer()">提交答案</button>
+        
+        <div class="message" id="msg"></div>
+    </div>
+</div>
+
+<script>
+    // ==========================================
+    // 🗂️ 核心海量题库：请在此处填满 300 题
+    // ==========================================
+    
+    // 🧑‍🤝‍🧑 【人物类】 请在这里补齐 100 题
+    const characterPool = [
+        { type: "人物", answer: "诸葛亮", hints: ["三国时期的著名蜀国军事家、政治家。", "传说他足智多谋，经常手拿一把羽毛扇。", "成语“三顾茅庐”和“草船借箭”都与他有关。"] },
+        { type: "人物", answer: "诸葛亮", hints: ["三国时期的著名蜀国军事家、政治家。", "传说他足智多谋，经常手拿一把羽毛扇。", "成语“三顾茅庐”和“草船借箭”都与他有关。"] },
+        { type: "人物", answer: "孙悟空", hints: ["中国古典神话小说《西游记》中的主角。", "拥有一双火眼金睛，擅长七十二变。", "手握如意金箍棒，曾大闹天宫。"] },
+        { type: "人物", answer: "秦始皇", hints: ["中国历史上第一个大一统王朝的皇帝。", "他统一了六国、货币、文字和度量衡。", "修筑了举世闻名的万里长城和兵马俑。"] },
+        { type: "人物", answer: "林俊杰", hints: ["华语乐坛著名男歌手，被称为“行走的CD”。", "他的经典代表作有《江南》、《修炼爱情》等。", "他的粉丝通常被称为“JM”，招牌特征是有迷人的酒窝。"] },
+        { type: "人物", answer: "周杰伦", hints: ["华语流行音乐巨星，开创了现代“中国风”乐曲先河。", "他的标志性口头禅是“哎呦，不错哦”。", "代表作有《青花瓷》、《稻香》、《告白气球》。"] },
+        { type: "人物", answer: "牛顿", hints: ["英国著名的物理学家、数学家和天文学家。", "他发现了万有引力定律和三大运动定律。", "传说他是在树下被一颗掉落的苹果砸中而引发灵感。"] },
+        { type: "人物", answer: "李白", hints: ["唐代伟大的浪漫主义诗人，被后人誉为“诗仙”。", "他非常喜欢喝酒，写下了无数家喻户晓的诗篇。", "名句“床前明月光，疑是地上霜”就是他写的。"] },
+        { type: "人物", answer: "成龙", hints: ["享誉国际的华人功夫巨星，荣获奥斯卡终身成就奖。", "他的动作电影风格通常是“功夫加喜剧”，且不用替身。", "他的英文名字是 Jackie Chan。"] },
+        { type: "人物", answer: "李光耀", hints: ["东南亚著名政治家，被誉为新加坡的“国父”。", "他带领一个缺乏资源的岛国实现了经济腾飞。", "他是新加坡第一任总理，也是现任总理的父亲。"] },
+        { type: "人物", answer: "杨利伟", hints: ["中国进入太空的第一人，航天英雄。", "2003年他乘坐“神舟五号”载人飞船成功升空。", "这次飞行实现了中华民族千年的飞天梦想。"] },
+        { type: "人物", answer: "孙悟空", hints: ["中国古典神话小说《西游记》中的主角。", "拥有一双火眼金睛，擅长七十二变。", "手握如意金箍棒，曾大闹天宫。"] },
+        { type: "人物", answer: "秦始皇", hints: ["中国历史上第一个大一统王朝的皇帝。", "他统一了六国、货币、文字和度量衡。", "修筑了举世闻名的万里长城 and 兵马俑。"] }
+        // ✍️ 第4题...第100题依次粘贴在此行下方
+    ];
+
+    // 📦 【物品类】 请在这里补齐 100 题
+    const itemPool = [
+        { type: "物品", answer: "智能手机", hints: ["现代人几乎人手一个的便携电子产品。", "屏幕可以触控，能上网、看视频、刷社交媒体。", "如果不给它充电，它就会变成一块‘黑砖’。"] },
+        { type: "物品", answer: "筷子", hints: ["东亚地区传统的进餐工具，通常成双成对使用。", "多用竹子、木头、金属或塑料制成。", "外国人学习中华文化时最难掌握的餐具。"] },
+        { type: "物品", answer: "智能手机", hints: ["现代人几乎人手一个的便携电子产品。", "屏幕可以触控，能上网、看视频、刷社交媒体。", "如果不给它充电，它就会变成一块‘黑砖’。"] },
+        { type: "物品", answer: "筷子", hints: ["东亚地区传统的进餐工具，通常成双成对使用。", "多用竹子、木头、金属或塑料制成。", "外国人学习中华文化时最难掌握的餐具。"] },
+        { type: "物品", answer: "冰箱", hints: ["一种用于保持食物新鲜的家用电器。", "内部温度很低，分为冷藏室和冷冻室。", "夏天大家最喜欢从里面拿冰激凌或冷饮。"] },
+        { type: "物品", answer: "汽车", hints: ["一种现代人常用的陆地交通工具，通常有四个轮子。", "需要添加汽油、柴油或通过充电来提供动力。", "驾驶它的人必须要考取专门的执照（驾照）。"] },
+        { type: "物品", answer: "手表", hints: ["一种戴在手腕上用来计时的工具。", "表面通常有指针，或者数字显示屏。", "虽然现在手机能看时间，但它依然是很受欢迎的饰品。"] },
+        { type: "物品", answer: "口罩", hints: ["一种卫生用品，通常戴在口鼻部位以过滤空气。", "在经历新冠疫情（COVID-19）后成为了全球常备物资。", "常见的颜色有蓝色、白色，通常带有两根挂耳绳。"] },
+        { type: "物品", answer: "存钱罐", hints: ["一种用来存放零钱、硬币的容器。", "它的外形最经典、最常见的是一只胖乎乎的小猪。", "很多人喜欢把它存满后砸碎，来享受收获的快乐。"] },
+        { type: "物品", answer: "扑克牌", hints: ["一种全球流行的纸牌娱乐工具。", "一副牌一共有 54 张，包含两张大王和小王。", "里面分为四个花色：红桃、黑桃、方块、梅花。"] },
+        { type: "物品", answer: "眼镜", hints: ["一种用来矫正视力或保护眼睛的光学仪器。", "由镜片和镜架组成，通常架在耳朵和鼻梁上。", "近视的人如果没有它，看世界就会一片模糊。"] },
+        { type: "物品", answer: "牙刷", hints: ["一种清洁用品，每天早晚我们都会用到它。", "顶端有密集的刷毛，通常需要搭配牙膏一起使用。", "它的主要作用是保护口腔卫生，防止蛀牙。"] },
+
+        { type: "物品", answer: "冰箱", hints: ["一种用于保持食物新鲜的家用电器。", "内部温度很低，分为冷藏室和冷冻室。", "夏天大家最喜欢从里面拿冰激凌或冷饮。"] }
+        // ✍️ 第4题...第100题依次粘贴在此行下方
+    ];
+
+    // 📖 【成语类】 请在这里补齐 100 题
+    const idiomPool = [
+        { type: "华语成语", answer: "画蛇添足", hints: ["比喻做了多余的事，反而把事情办糟了。", "出自古代几个比赛画画赢一壶酒的故事。", "其中一个人画完蛇后，觉得不完美又给蛇加了‘脚’。"] },
+        { type: "华语成语", answer: "守株待兔", hints: ["比喻不想努力，只希望通过侥幸获得成功。", "故事的主角是一个在农田里干活的宋国农夫。", "他因为看到一只撞死在树桩上的兔子，便放弃务农天天等待。"] },
+        { type: "华语成语", answer: "画蛇添足", hints: ["比喻做了多余的事，反而把事情办糟了。", "出自古代几个比赛画画赢一壶酒的故事。", "其中一个人画完蛇后，觉得不完美又给蛇加了‘脚’。"] },
+        { type: "华语成语", answer: "守株待兔", hints: ["比喻不想努力，只希望通过侥幸获得成功。", "故事的主角是一个在农田里干活的宋国农夫。", "他因为看到一只撞死在树桩上的兔子，便放弃务农天天等待。"] },
+        { type: "华语成语", answer: "狐假虎威", hints: ["比喻仰仗别人的权势来欺压或吓唬弱小。", "故事发生在森林里，涉及两只著名的野生哺乳动物。", "狡猾的一方走在前面，借着后面百兽之王的身影吓跑动物。"] },
+        { type: "华语成语", answer: "一箭双雕", hints: ["比喻做一件事可以同时达到两个目的或获得两种好处。", "近义词有“一举两得”。", "字面意思是只用了一支箭，就射中了二只大鸟。"] },
+        { type: "华语成语", answer: "对牛弹琴", hints: ["比喻对不懂道理的人讲道理，包含讽刺对方不通情理的意思。", "也可以用来讥笑说话做事不看对象的人。", "字面意思是对着一种农耕家畜演奏音乐，对方却毫无反应。"] },
+        { type: "华语成语", answer: "亡羊补牢", hints: ["比喻在受到损失之后想办法补救，免得以后再受损失。", "俗话说：“_______，为时未晚”。", "字面意思是丢了温顺的哺乳动物后，才去修补圈栏。"] },
+        { type: "华语成语", answer: "胸有成竹", hints: ["比喻在做事之前，心中已经有了成熟的构想和十足的把握。", "这个成语原本是形容古代一位画家非常擅长画一种植物。", "字面意思是画画前，心中已经有了这种中空、有节的绿色植物形象。"] },
+        { type: "华语成语", answer: "饮水思源", hints: ["比喻在享受成果、过上好日子时，不忘记带来这些好处的人或地方。", "包含感恩、不忘本的意思。", "字面意思是喝水的时候，会想到水的源头在哪里。"] },
+        { type: "华语成语", answer: "人山人海", hints: ["形容聚集的人非常非常多，场面十分壮观。", "每逢重大节日或者演唱会现场，常常会用这个词来形容。", "这个成语由两个代表自然景观的字和两个代表人类的字组成。"] },
+        { type: "华语成语", answer: "自相矛盾", hints: ["比喻一个人说话或做事不能前后一致，自己否定自己。", "出自古代一个集市上卖兵器商人的故事。", "他同时吹嘘自己有“什么都能刺穿的锋利武器”和“什么都刺不穿的防具”。"] },
+
+        { type: "华语成语", answer: "狐假虎威", hints: ["比喻仰仗别人的权势来欺压或吓唬弱小。", "故事发生在森林里，涉及两只著名的野生哺乳动物。", "狡猾的一方走在前面，借着后面百兽之王的身影吓跑动物。"] }
+        // ✍️ 第4题...第100题依次粘贴在此行下方
+    ];
+
+    // ==========================================
+    // ⚙️ 游戏核心控制逻辑
+    // ==========================================
+    
+    let activeQuestions = []; 
+    let currentIdx = 0;       
+    let timeLeft = 15;        
+    let timerInterval = null; 
+
+    // 点击 START 按钮开始游戏
+    function startGame() {
+        document.getElementById("startScreen").style.display = "none";
+        document.getElementById("failScreen").style.display = "none";
+        
+        // 合并三组题库
+        const totalPool = [...characterPool, ...itemPool, ...idiomPool];
+        
+        // 洗牌算法彻底打乱 300 题
+        for (let i = totalPool.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [totalPool[i], totalPool[j]] = [totalPool[j], totalPool[i]];
+        }
+        
+        // 盲选前 5 题
+        activeQuestions = totalPool.slice(0, 5);
+        currentIdx = 0;
+        loadQuestion();
+    }
+
+    // 加载关卡题目
+    function loadQuestion() {
+        if (currentIdx >= activeQuestions.length) {
+            clearInterval(timerInterval);
+            document.getElementById("gameBox").innerHTML = `
+                <h1 style="color: #27ae60;">🎉 恭喜完成终极挑战！</h1>
+                <p style="font-size: 16px; color: #7f8c8d;">你成功答对了所有随机抽取的 5 道题！</p>
+                <button class="btn" onclick="location.reload()">再玩一次</button>
+            `;
+            return;
+        }
+
+        const q = activeQuestions[currentIdx];
+        document.getElementById("currentLevel").innerText = currentIdx + 1;
+        document.getElementById("questionType").innerText = q.type;
+        document.getElementById("hint1").innerText = q.hints[0];
+        document.getElementById("hint2").innerText = q.hints[1];
+        document.getElementById("hint3").innerText = q.hints[2];
+        
+        document.getElementById("answerInput").value = "";
+        document.getElementById("msg").innerText = "";
+        document.getElementById("answerInput").focus();
+        
+        resetAndStartTimer();
+    }
+
+    // 倒计时核心控制
+    function resetAndStartTimer() {
+        clearInterval(timerInterval); 
+        timeLeft = 15;                
+        document.getElementById("timer").innerText = timeLeft;
+
+        timerInterval = setInterval(() => {
+            timeLeft--;
+            document.getElementById("timer").innerText = timeLeft;
+
+            if (timeLeft <= 0) {
+                clearInterval(timerInterval);
+                triggerGameOver(); // 倒计时归零，触发游戏结束
+            }
+        }, 1000);
+    }
+
+    // 触发“任务失败”界面
+    function triggerGameOver() {
+        const correctAnswer = activeQuestions[currentIdx].answer;
+        document.getElementById("failReason").innerText = `⏳ 15秒时间已到！正确答案本是：【${correctAnswer}】`;
+        document.getElementById("failScreen").style.display = "flex"; // 弹出失败红幕
+    }
+
+    // 点击 RESET 重新开始
+    function resetGame() {
+        document.getElementById("failScreen").style.display = "none";
+        document.getElementById("startScreen").style.display = "flex"; // 回到封面
+    }
+
+    // 验证玩家输入的答案
+    function checkAnswer() {
+        if (timeLeft <= 0) return; // 如果已经超时则不处理
+
+        const playerAnswer = document.getElementById("answerInput").value.trim();
+        const correctAnswer = activeQuestions[currentIdx].answer;
+        const msgDiv = document.getElementById("msg");
+
+        if (playerAnswer === "") {
+            msgDiv.className = "message error";
+            msgDiv.innerText = "❌ 答案格子不能为空！";
+            return;
+        }
+
+        // 精确匹配或关键词模糊包含
+        if (playerAnswer === correctAnswer || (correctAnswer.includes(playerAnswer) && playerAnswer.length >= 2)) {
+            clearInterval(timerInterval); // 答对瞬间卡死计时器
+            msgDiv.className = "message success";
+            msgDiv.innerText = `✅ 答对了！`;
+            
+            setTimeout(() => {
+                currentIdx++;
+                loadQuestion();
+            }, 1000);
+        } else {
+            msgDiv.className = "message error";
+            msgDiv.innerText = "❌ 答案不对哦，再猜猜！";
+        }
+    }
+
+    // 支持键盘 Enter 键直接提交
+    document.getElementById("answerInput").addEventListener("keyup", function(event) {
+        if (event.key === "Enter") checkAnswer();
+    });
+</script>
+
+</body>
+</html>
